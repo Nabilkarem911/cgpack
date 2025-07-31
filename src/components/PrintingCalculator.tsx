@@ -7,6 +7,9 @@ interface CalculatorState {
   pieceWidth: string;
   paperWeight: string;
   profitAmount: string;
+  quantity: string;
+  selectedPrintingType: string;
+  profitMargin: string;
 }
 interface PrintingType {
   name: string;
@@ -17,7 +20,10 @@ const PrintingCalculator = () => {
     pieceLength: '20',
     pieceWidth: '35',
     paperWeight: '0.3',
-    profitAmount: '0'
+    profitAmount: '0',
+    quantity: '1000',
+    selectedPrintingType: '0',
+    profitMargin: '0'
   });
   const printingTypes: PrintingType[] = [{
     name: "طباعة وجه واحد",
@@ -81,6 +87,33 @@ const PrintingCalculator = () => {
       [field]: value
     }));
   };
+
+  const calculateQuantityPrice = () => {
+    const results = calculateResults();
+    const quantity = parseFloat(state.quantity) || 0;
+    const selectedType = parseInt(state.selectedPrintingType) || 0;
+    const profitMargin = parseFloat(state.profitMargin) || 0;
+
+    if (results.length === 0 || quantity === 0) {
+      return { withoutTax: 0, tax: 0, withTax: 0, withProfit: 0 };
+    }
+
+    const selectedResult = results[selectedType];
+    const costPerPiece = selectedResult.pieceCost;
+    const totalCostWithoutTax = costPerPiece * quantity;
+    const tax = totalCostWithoutTax * 0.15;
+    const totalCostWithTax = totalCostWithoutTax + tax;
+    const profitAmount = totalCostWithTax * (profitMargin / 100);
+    const totalCostWithProfit = totalCostWithTax + profitAmount;
+
+    return {
+      withoutTax: totalCostWithoutTax,
+      tax: tax,
+      withTax: totalCostWithTax,
+      withProfit: totalCostWithProfit
+    };
+  };
+
   const results = calculateResults();
   return <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -143,6 +176,81 @@ const PrintingCalculator = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* قسم حساب التكلفة للكمية */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-right text-xl">💰 حساب التكلفة للكمية المطلوبة</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <Label htmlFor="quantity" className="text-right block mb-2">
+                      الكمية المطلوبة:
+                    </Label>
+                    <Input 
+                      id="quantity" 
+                      type="number" 
+                      value={state.quantity} 
+                      onChange={e => handleInputChange('quantity', e.target.value)} 
+                      className="text-right" 
+                      dir="rtl" 
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="printingType" className="text-right block mb-2">
+                      نوع الطباعة:
+                    </Label>
+                    <select 
+                      id="printingType" 
+                      value={state.selectedPrintingType} 
+                      onChange={e => handleInputChange('selectedPrintingType', e.target.value)}
+                      className="w-full p-2 border rounded-md text-right"
+                      dir="rtl"
+                    >
+                      {printingTypes.map((type, index) => (
+                        <option key={index} value={index}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="profitMargin" className="text-right block mb-2">
+                      هامش الربح (%):
+                    </Label>
+                    <Input 
+                      id="profitMargin" 
+                      type="number" 
+                      step="0.1" 
+                      value={state.profitMargin} 
+                      onChange={e => handleInputChange('profitMargin', e.target.value)} 
+                      className="text-right" 
+                      dir="rtl" 
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="grid gap-2 text-center">
+                    <div className="text-lg font-semibold">
+                      التكلفة بدون ضريبة: {calculateQuantityPrice().withoutTax.toFixed(2)} ر.س
+                    </div>
+                    <div className="text-lg font-semibold text-red-600">
+                      الضريبة (15%): {calculateQuantityPrice().tax.toFixed(2)} ر.س
+                    </div>
+                    <div className="text-xl font-bold text-green-600">
+                      التكلفة الإجمالية: {calculateQuantityPrice().withTax.toFixed(2)} ر.س
+                    </div>
+                    <div className="text-lg font-semibold text-blue-600">
+                      مع هامش الربح: {calculateQuantityPrice().withProfit.toFixed(2)} ر.س
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
       </div>
