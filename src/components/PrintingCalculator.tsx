@@ -101,10 +101,10 @@ const PrintingCalculator = () => {
     const selectedResult = results[selectedType];
     const costPerPiece = selectedResult.pieceCost;
     const totalCostWithoutTax = costPerPiece * quantity;
-    const profitAmount = profitMargin * quantity;
-    const totalCostWithProfit = totalCostWithoutTax + profitAmount;
-    const tax = totalCostWithProfit * 0.15;
-    const totalCostWithTax = totalCostWithProfit + tax;
+    const tax = totalCostWithoutTax * 0.15;
+    const totalCostWithTax = totalCostWithoutTax + tax;
+    const profitAmount = totalCostWithTax * (profitMargin / 100);
+    const totalCostWithProfit = totalCostWithTax + profitAmount;
 
     return {
       withoutTax: totalCostWithoutTax,
@@ -219,7 +219,7 @@ const PrintingCalculator = () => {
 
                   <div>
                     <Label htmlFor="profitMargin" className="text-right block mb-2">
-                      هامش الربح لكل قطعة (ر.س):
+                      هامش الربح (%):
                     </Label>
                     <Input 
                       id="profitMargin" 
