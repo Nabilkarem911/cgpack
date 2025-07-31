@@ -95,7 +95,7 @@ const PrintingCalculator = () => {
     const profitMargin = parseFloat(state.profitMargin) || 0;
 
     if (results.length === 0 || quantity === 0) {
-      return { withoutTax: 0, tax: 0, withTax: 0, profit: 0 };
+      return { withoutTax: 0, tax: 0, withTax: 0, withProfit: 0 };
     }
 
     const selectedResult = results[selectedType];
@@ -103,13 +103,14 @@ const PrintingCalculator = () => {
     const totalCostWithoutTax = costPerPiece * quantity;
     const tax = totalCostWithoutTax * 0.15;
     const totalCostWithTax = totalCostWithoutTax + tax;
-    const profitAmount = profitMargin * quantity;
+    const profitAmount = totalCostWithTax * (profitMargin / 100);
+    const totalCostWithProfit = totalCostWithTax + profitAmount;
 
     return {
       withoutTax: totalCostWithoutTax,
       tax: tax,
       withTax: totalCostWithTax,
-      profit: profitAmount
+      withProfit: totalCostWithProfit
     };
   };
 
@@ -244,7 +245,7 @@ const PrintingCalculator = () => {
                       التكلفة الإجمالية: {calculateQuantityPrice().withTax.toFixed(2)} ر.س
                     </div>
                     <div className="text-lg font-semibold text-blue-600">
-                      هامش الربح: {calculateQuantityPrice().profit.toFixed(2)} ر.س
+                      مع هامش الربح: {calculateQuantityPrice().withProfit.toFixed(2)} ر.س
                     </div>
                   </div>
                 </div>
