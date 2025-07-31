@@ -245,7 +245,7 @@ const PrintingCalculator = () => {
                       التكلفة الإجمالية: {calculateQuantityPrice().withTax.toFixed(2)} ر.س
                     </div>
                     <div className="text-lg font-semibold text-blue-600">
-                      مع هامش الربح: {calculateQuantityPrice().withProfit.toFixed(2)} ر.س
+                      إجمالي المكسب: {((calculateQuantityPrice().withTax * (parseFloat(state.profitMargin) || 0) / 100)).toFixed(2)} ر.س
                     </div>
                   </div>
                 </div>
