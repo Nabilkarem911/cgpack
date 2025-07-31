@@ -219,12 +219,12 @@ const PrintingCalculator = () => {
 
                   <div>
                     <Label htmlFor="profitMargin" className="text-right block mb-2">
-                      هامش الربح (%):
+                      المكسب لكل قطعة (ر.س):
                     </Label>
                     <Input 
                       id="profitMargin" 
                       type="number" 
-                      step="0.1" 
+                      step="0.01" 
                       value={state.profitMargin} 
                       onChange={e => handleInputChange('profitMargin', e.target.value)} 
                       className="text-right" 
@@ -245,7 +245,10 @@ const PrintingCalculator = () => {
                       التكلفة الإجمالية: {calculateQuantityPrice().withTax.toFixed(2)} ر.س
                     </div>
                     <div className="text-lg font-semibold text-blue-600">
-                      إجمالي المكسب: {((calculateQuantityPrice().withTax * (parseFloat(state.profitMargin) || 0) / 100)).toFixed(2)} ر.س
+                      إجمالي المكسب: {((parseFloat(state.profitMargin) || 0) * (parseFloat(state.quantity) || 0)).toFixed(2)} ر.س
+                    </div>
+                    <div className="text-xl font-bold text-purple-600 border-t pt-2">
+                      السعر النهائي: {(calculateQuantityPrice().withTax + ((parseFloat(state.profitMargin) || 0) * (parseFloat(state.quantity) || 0))).toFixed(2)} ر.س
                     </div>
                   </div>
                 </div>
