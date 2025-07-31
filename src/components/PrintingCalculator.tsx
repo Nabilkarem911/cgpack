@@ -2,271 +2,181 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calculator, Printer } from 'lucide-react';
 
 interface CalculatorState {
   pieceLength: string;
   pieceWidth: string;
   paperWeight: string;
-  operationType: string;
   profitAmount: string;
-  baseCost: number;
-  totalCostWithProfit: number;
+}
+
+interface PrintingType {
+  name: string;
+  extra: number;
 }
 
 const PrintingCalculator = () => {
   const [state, setState] = useState<CalculatorState>({
-    pieceLength: '',
-    pieceWidth: '',
-    paperWeight: '',
-    operationType: '',
-    profitAmount: '',
-    baseCost: 0,
-    totalCostWithProfit: 0
+    pieceLength: '20',
+    pieceWidth: '35',
+    paperWeight: '0.3',
+    profitAmount: '0'
   });
 
-  const operationTypes = [
-    { value: 'one_face', label: 'طباعة وجه واحد' },
-    { value: 'two_faces', label: 'طباعة وجهين' },
-    { value: 'one_face_one_solv', label: 'طباعة وجه وسلوفان واحد' },
-    { value: 'two_faces_one_solv', label: 'طباعة وجهين وسلوفان واحد' },
-    { value: 'two_faces_two_solv', label: 'طباعة وجهين و2 سلوفان' },
-    { value: 'one_face_two_solv', label: 'طباعة وجه واحد و2 سلوفان' }
+  const printingTypes: PrintingType[] = [
+    { name: "طباعة وجه واحد", extra: 0 },
+    { name: "طباعة وجهين", extra: 0.2 },
+    { name: "وجه واحد + سلوفان واحد", extra: 0.4 },
+    { name: "وجه واحد + 2 سلوفان", extra: 0.8 },
+    { name: "وجهين + 1 سلوفان", extra: 0.6 },
+    { name: "وجهين + 2 سلوفان", extra: 1.0 }
   ];
 
-  const calculateTotalCost = () => {
-    const pieceLength = parseFloat(state.pieceLength);
-    const pieceWidth = parseFloat(state.pieceWidth);
-    const paperWeight = parseFloat(state.paperWeight);
-    const profitAmount = parseFloat(state.profitAmount);
+  const calculateResults = () => {
+    const l = parseFloat(state.pieceLength);
+    const w = parseFloat(state.pieceWidth);
+    const weight = parseFloat(state.paperWeight);
+    const profit = parseFloat(state.profitAmount) || 0;
 
-    if (isNaN(pieceLength) || isNaN(pieceWidth) || isNaN(paperWeight) || !state.operationType) {
-      setState(prev => ({ ...prev, baseCost: 0, totalCostWithProfit: 0 }));
-      return;
+    if (isNaN(l) || isNaN(w) || isNaN(weight)) {
+      return [];
     }
 
-    // الأبعاد الثابتة للشيت
     const sheetLength = 100;
     const sheetWidth = 70;
+    const baseCost = 0.7 * 1 * 1.05 * 4.4 * weight;
 
-    // حساب عدد القطع بالطول والعرض مع تقريب النتيجة لأسفل
-    const piecesLength = Math.floor(sheetLength / pieceLength);
-    const piecesWidth = Math.floor(sheetWidth / pieceWidth);
-    const totalPieces = piecesLength * piecesWidth;
+    // الاتجاه 1
+    const fit1X = Math.floor(sheetLength / l);
+    const fit1Y = Math.floor(sheetWidth / w);
+    const count1 = fit1X * fit1Y;
 
-    // حساب التكلفة الأساسية
-    const baseCost = 0.7 * 1 * 1.05 * 4.4 * paperWeight;
+    // الاتجاه 2
+    const fit2X = Math.floor(sheetLength / w);
+    const fit2Y = Math.floor(sheetWidth / l);
+    const count2 = fit2X * fit2Y;
 
-    // إضافة تكلفة العملية
-    let operationCost = 0;
+    const bestCount = Math.max(count1, count2);
+    const bestDirection = bestCount === count1 ? `${l} × ${w}` : `${w} × ${l}`;
 
-    switch (state.operationType) {
-      case 'one_face':
-        operationCost = 0.9702;
-        break;
-      case 'two_faces':
-        operationCost = 0.9702 + 0.2;
-        break;
-      case 'one_face_one_solv':
-        operationCost = 0.9702 + 0.4;
-        break;
-      case 'two_faces_one_solv':
-        operationCost = 0.9702 + 0.2 + 0.4;
-        break;
-      case 'two_faces_two_solv':
-        operationCost = 0.9702 + 0.2 + 0.4 + 0.4;
-        break;
-      case 'one_face_two_solv':
-        operationCost = 0.9702 + 0.4 + 0.4;
-        break;
-    }
+    return printingTypes.map(type => {
+      const totalCost = baseCost + type.extra;
+      const costPerPiece = totalCost / bestCount;
+      const costWithProfit = costPerPiece + profit;
 
-    // حساب التكلفة لكل قطعة
-    const costPerPiece = baseCost + operationCost;
-
-    // حساب التكلفة الإجمالية بدون المكسب
-    let totalCost = costPerPiece * totalPieces;
-
-    // إضافة المكسب
-    if (!isNaN(profitAmount)) {
-      totalCost += profitAmount;
-    }
-
-    setState(prev => ({
-      ...prev,
-      baseCost: costPerPiece,
-      totalCostWithProfit: totalCost
-    }));
+      return {
+        name: type.name,
+        count: bestCount,
+        direction: bestDirection,
+        sheetCost: totalCost,
+        pieceCost: costPerPiece,
+        profitCost: costWithProfit
+      };
+    });
   };
-
-  useEffect(() => {
-    calculateTotalCost();
-  }, [state.pieceLength, state.pieceWidth, state.paperWeight, state.operationType, state.profitAmount]);
 
   const handleInputChange = (field: keyof CalculatorState, value: string) => {
     setState(prev => ({ ...prev, [field]: value }));
   };
 
+  const results = calculateResults();
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Calculator className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold calculator-title">
-              حاسبة تكلفة الطباعة
-            </h1>
-            <Printer className="h-8 w-8 text-accent" />
-          </div>
-          <p className="text-muted-foreground text-lg">
-            احسب تكلفة الطباعة بدقة بناءً على أبعاد القطعة ونوع العملية
-          </p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Input Section */}
-          <Card className="calculator-card">
-            <CardHeader>
-              <CardTitle className="text-right text-2xl">المدخلات</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4">
-                <div>
-                  <Label htmlFor="pieceLength" className="text-right block mb-2">
-                    طول الورقة (سم)
-                  </Label>
-                  <Input
-                    id="pieceLength"
-                    type="number"
-                    placeholder="ادخل طول الورقة بالسم"
-                    value={state.pieceLength}
-                    onChange={(e) => handleInputChange('pieceLength', e.target.value)}
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="pieceWidth" className="text-right block mb-2">
-                    عرض الورقة (سم)
-                  </Label>
-                  <Input
-                    id="pieceWidth"
-                    type="number"
-                    placeholder="ادخل عرض الورقة بالسم"
-                    value={state.pieceWidth}
-                    onChange={(e) => handleInputChange('pieceWidth', e.target.value)}
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="paperWeight" className="text-right block mb-2">
-                    وزن الورقة (كيلو)
-                  </Label>
-                  <Input
-                    id="paperWeight"
-                    type="number"
-                    step="0.1"
-                    placeholder="ادخل وزن الورقة (مثل 0.3)"
-                    value={state.paperWeight}
-                    onChange={(e) => handleInputChange('paperWeight', e.target.value)}
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="operationType" className="text-right block mb-2">
-                    اختيار نوع الطباعة
-                  </Label>
-                  <Select
-                    value={state.operationType}
-                    onValueChange={(value) => handleInputChange('operationType', value)}
-                    dir="rtl"
-                  >
-                    <SelectTrigger className="text-right">
-                      <SelectValue placeholder="اختر نوع الطباعة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operationTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="profitAmount" className="text-right block mb-2">
-                    المكسب (بالريال أو هللة)
-                  </Label>
-                  <Input
-                    id="profitAmount"
-                    type="number"
-                    step="0.01"
-                    placeholder="ادخل قيمة المكسب (مثل 0.5 ريال أو 50 هللة)"
-                    value={state.profitAmount}
-                    onChange={(e) => handleInputChange('profitAmount', e.target.value)}
-                    className="text-right"
-                    dir="rtl"
-                  />
-                </div>
+        <Card className="calculator-card">
+          <CardHeader>
+            <CardTitle className="text-right text-2xl">📦 حاسبة تكلفة الطباعة من الشيت (100 × 70)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <Label htmlFor="pieceLength" className="text-right block mb-2">
+                  طول القطعة (سم):
+                </Label>
+                <Input
+                  id="pieceLength"
+                  type="number"
+                  value={state.pieceLength}
+                  onChange={(e) => handleInputChange('pieceLength', e.target.value)}
+                  className="text-right"
+                  dir="rtl"
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Results Section */}
-          <div className="space-y-6">
-            <Card className="calculator-card">
-              <CardHeader>
-                <CardTitle className="text-right text-2xl">النتائج</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="text-right block mb-2 text-muted-foreground">
-                    التكلفة الأساسية للقطعة
-                  </Label>
-                  <div className="bg-muted p-4 rounded-lg text-right">
-                    <span className="text-2xl font-bold text-primary">
-                      {state.baseCost.toFixed(2)} ريال
-                    </span>
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="pieceWidth" className="text-right block mb-2">
+                  عرض القطعة (سم):
+                </Label>
+                <Input
+                  id="pieceWidth"
+                  type="number"
+                  value={state.pieceWidth}
+                  onChange={(e) => handleInputChange('pieceWidth', e.target.value)}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
 
-                <div>
-                  <Label className="text-right block mb-2 text-muted-foreground">
-                    التكلفة مع المكسب
-                  </Label>
-                  <div className="result-card p-4 rounded-lg text-right">
-                    <span className="text-2xl font-bold">
-                      {state.totalCostWithProfit.toFixed(2)} ريال
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <div>
+                <Label htmlFor="paperWeight" className="text-right block mb-2">
+                  وزن الورق (مثلاً: 0.3):
+                </Label>
+                <Input
+                  id="paperWeight"
+                  type="number"
+                  step="0.01"
+                  value={state.paperWeight}
+                  onChange={(e) => handleInputChange('paperWeight', e.target.value)}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
 
-            {/* Additional Info Card */}
-            <Card className="calculator-card">
-              <CardHeader>
-                <CardTitle className="text-right text-xl">معلومات إضافية</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-right text-sm text-muted-foreground">
-                  <p>• أبعاد الشيت الثابتة: 100×70 سم</p>
-                  <p>• التكلفة تشمل المواد والعمليات المختارة</p>
-                  <p>• المكسب يضاف على التكلفة الإجمالية</p>
-                  <p>• جميع النتائج بالريال السعودي</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              <div>
+                <Label htmlFor="profitAmount" className="text-right block mb-2">
+                  المكسب لكل قطعة (ر.س):
+                </Label>
+                <Input
+                  id="profitAmount"
+                  type="number"
+                  step="0.01"
+                  value={state.profitAmount}
+                  onChange={(e) => handleInputChange('profitAmount', e.target.value)}
+                  className="text-right"
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse border border-border">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="border border-border p-2 text-center">نوع الطباعة</th>
+                    <th className="border border-border p-2 text-center">عدد القطع</th>
+                    <th className="border border-border p-2 text-center">الاتجاه</th>
+                    <th className="border border-border p-2 text-center">تكلفة الشيت (ر.س)</th>
+                    <th className="border border-border p-2 text-center">تكلفة القطعة (ر.س)</th>
+                    <th className="border border-border p-2 text-center">+ مكسب (ر.س)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((result, index) => (
+                    <tr key={index} className="hover:bg-muted/50">
+                      <td className="border border-border p-2 text-center">{result.name}</td>
+                      <td className="border border-border p-2 text-center">{result.count}</td>
+                      <td className="border border-border p-2 text-center">{result.direction}</td>
+                      <td className="border border-border p-2 text-center">{result.sheetCost.toFixed(4)}</td>
+                      <td className="border border-border p-2 text-center">{result.pieceCost.toFixed(4)}</td>
+                      <td className="border border-border p-2 text-center">{result.profitCost.toFixed(4)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
