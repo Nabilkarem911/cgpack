@@ -103,7 +103,7 @@ const PrintingCalculator = () => {
     const totalCostWithoutTax = costPerPiece * quantity;
     const tax = totalCostWithoutTax * 0.15;
     const totalCostWithTax = totalCostWithoutTax + tax;
-    const profitAmount = totalCostWithTax * (profitMargin / 100);
+    const profitAmount = profitMargin * quantity;
 
     return {
       withoutTax: totalCostWithoutTax,
