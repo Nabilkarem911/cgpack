@@ -30,6 +30,7 @@ const PrintingCalculator = () => {
     { value: 'one_face', label: 'طباعة وجه واحد' },
     { value: 'two_faces', label: 'طباعة وجهين' },
     { value: 'one_face_one_solv', label: 'طباعة وجه وسلوفان واحد' },
+    { value: 'two_faces_one_solv', label: 'طباعة وجهين وسلوفان واحد' },
     { value: 'two_faces_two_solv', label: 'طباعة وجهين و2 سلوفان' },
     { value: 'one_face_two_solv', label: 'طباعة وجه واحد و2 سلوفان' }
   ];
@@ -69,6 +70,9 @@ const PrintingCalculator = () => {
         break;
       case 'one_face_one_solv':
         operationCost = 0.9702 + 0.4;
+        break;
+      case 'two_faces_one_solv':
+        operationCost = 0.9702 + 0.2 + 0.4;
         break;
       case 'two_faces_two_solv':
         operationCost = 0.9702 + 0.2 + 0.4 + 0.4;
