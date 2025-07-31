@@ -206,7 +206,7 @@ const PrintingCalculator = () => {
                       id="printingType" 
                       value={state.selectedPrintingType} 
                       onChange={e => handleInputChange('selectedPrintingType', e.target.value)}
-                      className="w-full p-2 border rounded-md text-right"
+                      className="w-full p-2 border rounded-md text-right text-foreground bg-background"
                       dir="rtl"
                     >
                       {printingTypes.map((type, index) => (
