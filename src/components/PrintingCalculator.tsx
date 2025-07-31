@@ -101,10 +101,10 @@ const PrintingCalculator = () => {
     const selectedResult = results[selectedType];
     const costPerPiece = selectedResult.pieceCost;
     const totalCostWithoutTax = costPerPiece * quantity;
-    const tax = totalCostWithoutTax * 0.15;
-    const totalCostWithTax = totalCostWithoutTax + tax;
-    const profitAmount = totalCostWithTax * (profitMargin / 100);
-    const totalCostWithProfit = totalCostWithTax + profitAmount;
+    const profitAmount = totalCostWithoutTax * (profitMargin / 100);
+    const totalCostWithProfit = totalCostWithoutTax + profitAmount;
+    const tax = totalCostWithProfit * 0.15;
+    const totalCostWithTax = totalCostWithProfit + tax;
 
     return {
       withoutTax: totalCostWithoutTax,
