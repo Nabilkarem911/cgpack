@@ -288,7 +288,7 @@ const PrintingCalculator = () => {
                     </div>
                     <div className="grid gap-2 md:grid-cols-2">
                       <div className="text-lg font-semibold">
-                        القطع عادي: {calculateBoxLayout().piecesNormal}
+                        القطع بالطول: {calculateBoxLayout().piecesNormal}
                       </div>
                       <div className="text-lg font-semibold">
                         القطع مدور: {calculateBoxLayout().piecesRotated}
