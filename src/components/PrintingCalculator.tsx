@@ -105,7 +105,7 @@ const PrintingCalculator = () => {
         flatWidth: '0.00',
         piecesNormal: 0,
         piecesRotated: 0,
-        bestFit: 'Normal',
+        bestFit: '0 × 0',
         bestPieces: 0
       };
     }
@@ -126,8 +126,10 @@ const PrintingCalculator = () => {
     const piecesNormal = Math.floor(sheetLength / flatLength) * Math.floor(sheetWidth / flatWidth);
     const piecesRotated = Math.floor(sheetLength / flatWidth) * Math.floor(sheetWidth / flatLength);
 
-    // Choose optimal orientation
-    const bestFit = piecesNormal >= piecesRotated ? 'Normal' : 'Rotated';
+    // Choose optimal orientation and show dimensions
+    const bestFit = piecesNormal >= piecesRotated 
+      ? `${flatLength.toFixed(2)} × ${flatWidth.toFixed(2)}` 
+      : `${flatWidth.toFixed(2)} × ${flatLength.toFixed(2)}`;
     const bestPieces = Math.max(piecesNormal, piecesRotated);
 
     return {
@@ -293,7 +295,7 @@ const PrintingCalculator = () => {
                       </div>
                     </div>
                     <div className="text-lg font-semibold text-green-600">
-                      أفضل اتجاه: {calculateBoxLayout().bestFit === 'Normal' ? 'عادي' : 'مدور'}
+                      أفضل اتجاه: {calculateBoxLayout().bestFit} سم
                     </div>
                     <div className="text-xl font-bold text-blue-600 border-t pt-2">
                       أقصى عدد قطع بالشيت: {calculateBoxLayout().bestPieces}
