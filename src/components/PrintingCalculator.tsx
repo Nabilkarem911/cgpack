@@ -10,6 +10,9 @@ interface CalculatorState {
   quantity: string;
   selectedPrintingType: string;
   profitMargin: string;
+  boxLength: string;
+  boxWidth: string;
+  boxHeight: string;
 }
 interface PrintingType {
   name: string;
@@ -23,7 +26,10 @@ const PrintingCalculator = () => {
     profitAmount: '0',
     quantity: '1000',
     selectedPrintingType: '0',
-    profitMargin: '0'
+    profitMargin: '0',
+    boxLength: '30',
+    boxWidth: '22',
+    boxHeight: '11'
   });
   const printingTypes: PrintingType[] = [{
     name: "طباعة وجه واحد",
@@ -86,6 +92,52 @@ const PrintingCalculator = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const calculateBoxLayout = () => {
+    const length = parseFloat(state.boxLength) || 0;
+    const width = parseFloat(state.boxWidth) || 0;
+    const height = parseFloat(state.boxHeight) || 0;
+
+    if (length === 0 || width === 0 || height === 0) {
+      return {
+        flatLength: '0.00',
+        flatWidth: '0.00',
+        piecesNormal: 0,
+        piecesRotated: 0,
+        bestFit: 'Normal',
+        bestPieces: 0
+      };
+    }
+
+    // Margins
+    const sideMargin = 1; // cm on left and right
+    const topMargin = 1;  // only one margin on top in length direction
+
+    // Flat box dimensions (unfolded)
+    const flatWidth = (height * 2) + width + (sideMargin * 2);
+    const flatLength = (height * 2) + (length * 2) + topMargin;
+
+    // Sheet dimensions
+    const sheetWidth = 70;
+    const sheetLength = 100;
+
+    // Number of pieces per sheet (normal and rotated)
+    const piecesNormal = Math.floor(sheetLength / flatLength) * Math.floor(sheetWidth / flatWidth);
+    const piecesRotated = Math.floor(sheetLength / flatWidth) * Math.floor(sheetWidth / flatLength);
+
+    // Choose optimal orientation
+    const bestFit = piecesNormal >= piecesRotated ? 'Normal' : 'Rotated';
+    const bestPieces = Math.max(piecesNormal, piecesRotated);
+
+    return {
+      flatLength: flatLength.toFixed(2),
+      flatWidth: flatWidth.toFixed(2),
+      piecesNormal,
+      piecesRotated,
+      bestFit,
+      bestPieces
+    };
   };
 
   const calculateQuantityPrice = () => {
@@ -177,56 +229,50 @@ const PrintingCalculator = () => {
               </table>
             </div>
 
-            {/* قسم حساب التكلفة للكمية */}
+            {/* حاسبة تخطيط الصناديق */}
             <Card className="mt-6">
               <CardHeader>
-                <CardTitle className="text-right text-xl">💰 حساب التكلفة للكمية المطلوبة</CardTitle>
+                <CardTitle className="text-right text-xl">📦 حاسبة تخطيط الصناديق</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-3">
                   <div>
-                    <Label htmlFor="quantity" className="text-right block mb-2">
-                      الكمية المطلوبة:
+                    <Label htmlFor="boxLength" className="text-right block mb-2">
+                      طول الصندوق (سم):
                     </Label>
                     <Input 
-                      id="quantity" 
+                      id="boxLength" 
                       type="number" 
-                      value={state.quantity} 
-                      onChange={e => handleInputChange('quantity', e.target.value)} 
+                      value={state.boxLength} 
+                      onChange={e => handleInputChange('boxLength', e.target.value)} 
                       className="text-right" 
                       dir="rtl" 
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="printingType" className="text-right block mb-2">
-                      نوع الطباعة:
+                    <Label htmlFor="boxWidth" className="text-right block mb-2">
+                      عرض الصندوق (سم):
                     </Label>
-                    <select 
-                      id="printingType" 
-                      value={state.selectedPrintingType} 
-                      onChange={e => handleInputChange('selectedPrintingType', e.target.value)}
-                      className="w-full p-2 border rounded-md text-right text-foreground bg-background"
-                      dir="rtl"
-                    >
-                      {printingTypes.map((type, index) => (
-                        <option key={index} value={index}>
-                          {type.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Input 
+                      id="boxWidth" 
+                      type="number" 
+                      value={state.boxWidth} 
+                      onChange={e => handleInputChange('boxWidth', e.target.value)} 
+                      className="text-right" 
+                      dir="rtl" 
+                    />
                   </div>
 
                   <div>
-                    <Label htmlFor="profitMargin" className="text-right block mb-2">
-                      المكسب لكل قطعة (ر.س):
+                    <Label htmlFor="boxHeight" className="text-right block mb-2">
+                      ارتفاع الصندوق (سم):
                     </Label>
                     <Input 
-                      id="profitMargin" 
+                      id="boxHeight" 
                       type="number" 
-                      step="0.01" 
-                      value={state.profitMargin} 
-                      onChange={e => handleInputChange('profitMargin', e.target.value)} 
+                      value={state.boxHeight} 
+                      onChange={e => handleInputChange('boxHeight', e.target.value)} 
                       className="text-right" 
                       dir="rtl" 
                     />
@@ -234,21 +280,23 @@ const PrintingCalculator = () => {
                 </div>
 
                 <div className="bg-muted p-4 rounded-lg">
-                  <div className="grid gap-2 text-center">
-                    <div className="text-lg font-semibold">
-                      التكلفة بدون ضريبة: {calculateQuantityPrice().withoutTax.toFixed(2)} ر.س
+                  <div className="grid gap-3 text-center">
+                    <div className="text-xl font-bold text-primary">
+                      الأبعاد المسطحة: {calculateBoxLayout().flatLength} × {calculateBoxLayout().flatWidth} سم
                     </div>
-                    <div className="text-lg font-semibold text-red-600">
-                      الضريبة (15%): {calculateQuantityPrice().tax.toFixed(2)} ر.س
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div className="text-lg font-semibold">
+                        القطع عادي: {calculateBoxLayout().piecesNormal}
+                      </div>
+                      <div className="text-lg font-semibold">
+                        القطع مدور: {calculateBoxLayout().piecesRotated}
+                      </div>
                     </div>
-                    <div className="text-xl font-bold text-green-600">
-                      التكلفة الإجمالية: {calculateQuantityPrice().withTax.toFixed(2)} ر.س
+                    <div className="text-lg font-semibold text-green-600">
+                      أفضل اتجاه: {calculateBoxLayout().bestFit === 'Normal' ? 'عادي' : 'مدور'}
                     </div>
-                    <div className="text-lg font-semibold text-blue-600">
-                      إجمالي المكسب: {((parseFloat(state.profitMargin) || 0) * (parseFloat(state.quantity) || 0)).toFixed(2)} ر.س
-                    </div>
-                    <div className="text-xl font-bold text-purple-600 border-t pt-2">
-                      السعر النهائي: {(calculateQuantityPrice().withTax + ((parseFloat(state.profitMargin) || 0) * (parseFloat(state.quantity) || 0))).toFixed(2)} ر.س
+                    <div className="text-xl font-bold text-blue-600 border-t pt-2">
+                      أقصى عدد قطع بالشيت: {calculateBoxLayout().bestPieces}
                     </div>
                   </div>
                 </div>
