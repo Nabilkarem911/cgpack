@@ -291,7 +291,7 @@ const PrintingCalculator = () => {
                         القطع بالطول: {calculateBoxLayout().piecesNormal}
                       </div>
                       <div className="text-lg font-semibold">
-                        القطع مدور: {calculateBoxLayout().piecesRotated}
+                        القطع بالعرض: {calculateBoxLayout().piecesRotated}
                       </div>
                     </div>
                     <div className="text-lg font-semibold text-green-600">
