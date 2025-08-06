@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Palette } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 interface CalculatorState {
   pieceLength: string;
   pieceWidth: string;
@@ -19,6 +22,7 @@ interface PrintingType {
   extra: number;
 }
 const PrintingCalculator = () => {
+  const navigate = useNavigate();
   const [state, setState] = useState<CalculatorState>({
     pieceLength: '20',
     pieceWidth: '35',
@@ -173,7 +177,17 @@ const PrintingCalculator = () => {
       <div className="max-w-4xl mx-auto">
         <Card className="calculator-card">
           <CardHeader>
-            <CardTitle className="text-right text-2xl">📦 حاسبة تكلفة الطباعة من الشيت (100 × 70) (الكميه 10000)</CardTitle>
+            <div className="flex items-center justify-between">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/pantone-colors')}
+                className="flex items-center gap-2"
+              >
+                <Palette className="h-4 w-4" />
+                ألوان Pantone
+              </Button>
+              <CardTitle className="text-right text-2xl">📦 حاسبة تكلفة الطباعة من الشيت (100 × 70) (الكميه 10000)</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
