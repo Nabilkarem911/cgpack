@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import pantoneData from '@/data/pantone-colors.json';
+import pantoneData from '@/data/mega-pantone-database.json';
 
 interface PantoneColor {
   name: string;
@@ -170,10 +170,16 @@ const PantoneColors = () => {
 
             {/* Colors Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-              {filteredColors.map((color, index) => (
+              {filteredColors.slice(0, 200).map((color, index) => (
                 <ColorCard key={index} color={color} />
               ))}
             </div>
+            
+            {filteredColors.length > 200 && (
+              <div className="text-center text-muted-foreground text-sm">
+                عرض أول 200 لون من {filteredColors.length} - استخدم البحث للوصول لألوان محددة
+              </div>
+            )}
 
             {filteredColors.length === 0 && (
               <div className="text-center py-12">
