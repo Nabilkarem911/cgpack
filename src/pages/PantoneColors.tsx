@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Search, Filter, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import pantoneData from '@/data/mega-pantone-database.json';
+import pantoneData from '@/data/extended-pantone-database.json';
 
 interface PantoneColor {
   name: string;
@@ -22,6 +22,8 @@ const PantoneColors = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [displayedColors, setDisplayedColors] = useState(50);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   // Convert the JSON data to our interface
   const pantoneColors: PantoneColor[] = useMemo(() => {
@@ -40,34 +42,54 @@ const PantoneColors = () => {
     });
   }, []);
 
-  // Categorize colors
+  // Enhanced color categorization function
   const categorizeColor = (color: PantoneColor): string => {
     const { r, g, b } = color.rgb;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const diff = max - min;
+    const name = color.name.toLowerCase();
     
     // Check for metallic/special colors in name
-    if (color.name.toLowerCase().includes('metallic') || 
-        color.name.toLowerCase().includes('gold') || 
-        color.name.toLowerCase().includes('silver')) {
+    if (name.includes('metallic') || name.includes('gold') || name.includes('silver') ||
+        name.includes('copper') || name.includes('bronze') || name.includes('pewter') ||
+        name.includes('aluminum') || name.includes('titanium') || name.includes('chrome') ||
+        name.includes('platinum')) {
       return 'metallic';
     }
     
+    // Check for specific color names
+    if (name.includes('black') || (r < 50 && g < 50 && b < 50)) return 'black';
+    if (name.includes('white') || (r > 240 && g > 240 && b > 240)) return 'white';
+    
+    // Calculate HSV values for better color categorization
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const diff = max - min;
+    const lightness = (max + min) / 2;
+    const saturation = diff === 0 ? 0 : diff / (255 - Math.abs(2 * lightness - 255));
+    
     // Check for pastel colors (high lightness, low saturation)
-    if (min > 150 && diff < 100) {
+    if (lightness > 180 && saturation < 0.5) {
       return 'pastel';
     }
     
-    // Determine dominant color
-    if (r > g && r > b) return 'red';
-    if (g > r && g > b) return 'green';
-    if (b > r && b > g) return 'blue';
-    if (r > 200 && g > 200 && b < 100) return 'yellow';
-    if (r > 150 && g < 100 && b > 150) return 'purple';
-    if (r > 200 && g > 100 && b < 100) return 'orange';
-    if (r < 100 && g < 100 && b < 100) return 'black';
-    if (r > 200 && g > 200 && b > 200) return 'white';
+    // Improved color detection with better thresholds
+    if (diff < 30) {
+      // Gray colors
+      if (lightness < 80) return 'black';
+      if (lightness > 200) return 'white';
+      return 'other';
+    }
+    
+    // Primary color detection with improved logic
+    const redDominant = r >= g && r >= b && r > min + 30;
+    const greenDominant = g >= r && g >= b && g > min + 30;
+    const blueDominant = b >= r && b >= g && b > min + 30;
+    
+    if (redDominant && greenDominant && r > 150 && g > 150 && b < 120) return 'yellow';
+    if (redDominant && blueDominant && r > 100 && b > 100 && g < 150) return 'purple';
+    if (redDominant && g > 100 && g < 200 && b < 100) return 'orange';
+    if (redDominant) return 'red';
+    if (greenDominant) return 'green';
+    if (blueDominant) return 'blue';
     
     return 'other';
   };
@@ -85,6 +107,32 @@ const PantoneColors = () => {
       return matchesSearch && matchesCategory;
     });
   }, [pantoneColors, searchTerm, selectedCategory]);
+
+  // Handle infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 1000) {
+        if (displayedColors < filteredColors.length) {
+          setDisplayedColors(prev => Math.min(prev + 50, filteredColors.length));
+        }
+      }
+      
+      // Show/hide scroll to top button
+      setShowScrollToTop(window.pageYOffset > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [filteredColors.length, displayedColors]);
+
+  // Reset displayed colors when filters change
+  useEffect(() => {
+    setDisplayedColors(50);
+  }, [searchTerm, selectedCategory]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const ColorCard = ({ color }: { color: PantoneColor }) => (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-105">
@@ -170,14 +218,20 @@ const PantoneColors = () => {
 
             {/* Colors Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-              {filteredColors.slice(0, 200).map((color, index) => (
+              {filteredColors.slice(0, displayedColors).map((color, index) => (
                 <ColorCard key={index} color={color} />
               ))}
             </div>
             
-            {filteredColors.length > 200 && (
+            {displayedColors < filteredColors.length && (
               <div className="text-center text-muted-foreground text-sm">
-                عرض أول 200 لون من {filteredColors.length} - استخدم البحث للوصول لألوان محددة
+                عرض {displayedColors} من أصل {filteredColors.length} لون - انزل للأسفل لتحميل المزيد
+              </div>
+            )}
+            
+            {displayedColors >= filteredColors.length && filteredColors.length > 50 && (
+              <div className="text-center text-muted-foreground text-sm">
+                تم عرض جميع الألوان ({filteredColors.length} لون)
               </div>
             )}
 
@@ -201,6 +255,17 @@ const PantoneColors = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Scroll to Top Button */}
+      {showScrollToTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 rounded-full w-12 h-12 shadow-lg"
+          size="icon"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+      )}
     </div>
   );
 };
