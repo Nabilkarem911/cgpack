@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Search, Filter, ArrowUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import pantoneData from '@/data/extended-pantone-database.json';
+import pantoneData from '@/data/ultimate-pantone-database.json';
 
 interface PantoneColor {
   name: string;
@@ -42,7 +42,7 @@ const PantoneColors = () => {
     });
   }, []);
 
-  // Enhanced color categorization function
+  // Enhanced color categorization function with improved accuracy
   const categorizeColor = (color: PantoneColor): string => {
     const { r, g, b } = color.rgb;
     const name = color.name.toLowerCase();
@@ -55,41 +55,67 @@ const PantoneColors = () => {
       return 'metallic';
     }
     
-    // Check for specific color names
-    if (name.includes('black') || (r < 50 && g < 50 && b < 50)) return 'black';
-    if (name.includes('white') || (r > 240 && g > 240 && b > 240)) return 'white';
+    // Check for black colors
+    if (name.includes('black') || name.includes('gray') || name.includes('grey') || 
+        (r < 80 && g < 80 && b < 80)) {
+      return 'black';
+    }
     
-    // Calculate HSV values for better color categorization
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const diff = max - min;
+    // Check for white colors
+    if (name.includes('white') || (r > 220 && g > 220 && b > 220)) {
+      return 'white';
+    }
+    
+    // Convert RGB to HSL for better color classification
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    const delta = max - min;
+    
     const lightness = (max + min) / 2;
-    const saturation = diff === 0 ? 0 : diff / (255 - Math.abs(2 * lightness - 255));
+    const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+    
+    let hue = 0;
+    if (delta !== 0) {
+      switch (max) {
+        case rNorm:
+          hue = ((gNorm - bNorm) / delta) % 6;
+          break;
+        case gNorm:
+          hue = (bNorm - rNorm) / delta + 2;
+          break;
+        case bNorm:
+          hue = (rNorm - gNorm) / delta + 4;
+          break;
+      }
+      hue = hue * 60;
+      if (hue < 0) hue += 360;
+    }
     
     // Check for pastel colors (high lightness, low saturation)
-    if (lightness > 180 && saturation < 0.5) {
+    if (lightness > 0.75 && saturation < 0.4) {
       return 'pastel';
     }
     
-    // Improved color detection with better thresholds
-    if (diff < 30) {
-      // Gray colors
-      if (lightness < 80) return 'black';
-      if (lightness > 200) return 'white';
+    // Low saturation means gray/neutral colors
+    if (saturation < 0.15) {
+      if (lightness < 0.3) return 'black';
+      if (lightness > 0.8) return 'white';
       return 'other';
     }
     
-    // Primary color detection with improved logic
-    const redDominant = r >= g && r >= b && r > min + 30;
-    const greenDominant = g >= r && g >= b && g > min + 30;
-    const blueDominant = b >= r && b >= g && b > min + 30;
-    
-    if (redDominant && greenDominant && r > 150 && g > 150 && b < 120) return 'yellow';
-    if (redDominant && blueDominant && r > 100 && b > 100 && g < 150) return 'purple';
-    if (redDominant && g > 100 && g < 200 && b < 100) return 'orange';
-    if (redDominant) return 'red';
-    if (greenDominant) return 'green';
-    if (blueDominant) return 'blue';
+    // Classify by hue ranges with better precision
+    if (hue >= 0 && hue < 15) return 'red';       // Pure red
+    if (hue >= 15 && hue < 45) return 'orange';   // Red-orange to orange
+    if (hue >= 45 && hue < 75) return 'yellow';   // Orange-yellow to yellow
+    if (hue >= 75 && hue < 165) return 'green';   // Yellow-green to green
+    if (hue >= 165 && hue < 255) return 'blue';   // Green-blue to blue
+    if (hue >= 255 && hue < 285) return 'purple'; // Blue-purple to purple
+    if (hue >= 285 && hue < 330) return 'purple'; // Purple to red-purple
+    if (hue >= 330 && hue <= 360) return 'red';   // Red-purple to red
     
     return 'other';
   };
